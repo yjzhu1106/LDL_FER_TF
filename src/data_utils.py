@@ -10,7 +10,8 @@ import sklearn
 import time
 import PIL, io
 
-from tensorflow.keras.utils import Progbar
+# from tensorflow.keras.utils import Progbar
+from keras.utils import Progbar
 
 def get_dataset_len(dataset):
     return int(tf.data.experimental.cardinality(dataset))

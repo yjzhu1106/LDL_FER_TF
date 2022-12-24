@@ -1,4 +1,4 @@
-from base_config import Config
+from cfg_files.base_config import Config
 
 base_config = Config({
     'name': 'Base Config',
@@ -34,3 +34,6 @@ base_config = Config({
 })
 
 config = base_config.copy()
+
+def getConfig():
+    return base_config.copy()

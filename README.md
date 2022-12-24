@@ -10,6 +10,27 @@ pip install pandas opencv-python scikit-learn matplotlib
 pip install git+https://github.com/qubvel/classification_models.git
 ```
 
+**macos m1**
+```shell
+# version
+numpy=1.22.3
+keras=2.11.0
+tensorflow-estimator=2.11.0
+tensorflow-macos=2.11.0
+tensorflow-metal=0.7.0
+# pip install
+conda install -c apple tensorflow-deps
+pip install tensorflow-macos
+pip install tensorflow-metal
+pip install numpy --upgrade
+```
+
+
+
+
+
+
+
 # Datasets
 Download the [RAF-DB](http://www.whdeng.cn/RAF/model1.html#dataset) dataset and extract the `aligned` folder (contains aligned faces) into `data/rafdb/aligned`
 We provide the pseudo valence-arousal as well as the pre-built K-nearest-neighbors for each instance in `train.csv`. The annotation file should have the following columns
@@ -38,6 +59,20 @@ python src/train.py --cfg=config_resnet18_raf --train_data_path=data/rafdb/raf_t
 #Resume training from the latest checkpoint
 python train.py --train_data=/path/to/train_data.csv --resume
 ```
+**PyCharm run param**
+```Shell
+--train_data_path /Volumes/out_disk/datasets/RAF-DB/data/raf_train.csv
+--train_image_dir /Volumes/out_disk/datasets/RAF-DB/Image/aligned
+
+--val_data_path 
+--val_image_dir 
+--cfg
+--resume
+
+
+```
+
+
 
 # Evaluation
 Run this command to evaluate the trained model on the test set. We use the classification accuracy as our evaluation metric.
@@ -46,3 +81,4 @@ Run this command to evaluate the trained model on the test set. We use the class
 python src/eval.py --cfg=config_resnet50_raf --trained_weights=trained_weights/trained_resnet50_raf --test_data_path=data/rafdb/raf_test.csv --test_image_dir=data/rafdb/aligned
 
 ```
+

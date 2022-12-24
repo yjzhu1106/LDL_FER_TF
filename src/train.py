@@ -1,10 +1,12 @@
 import os
+
+import cfg_files.config_resnet50_raf
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-import tensorflow as tf
-import numpy as np
+
+
 # from tensorflow.keras.utils import Progbar
 from keras.utils import Progbar
-import pandas as pd
 
 from models import *
 from data_utils import *
@@ -38,7 +40,7 @@ def parse_arg(argv=None):
     #                     default=None,
     #                     help="load the pretrained weights of the model in /path/to/model_weights")
     parser.add_argument("--cfg", type=str,
-                        default="config_resnet50_raf",
+                        default="cfg_files.config_resnet50_raf",
                         help="config file_name")
     parser.add_argument("--resume",
                         action= "store_true",
@@ -274,7 +276,7 @@ if __name__ == '__main__':
     args = parse_arg()
 
 
-    config = __import__(args.cfg).config
+    config = cfg_files.config_resnet50_raf.getConfig()
     print(config.__dict__)
 
     main(train_data_path= args.train_data_path, image_dir=args.train_image_dir, config= config,
