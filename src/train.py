@@ -1,6 +1,6 @@
 import os
 
-import cfg_files.config_resnet50_raf
+from cfg_files import config_resnet50_raf
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -276,7 +276,7 @@ if __name__ == '__main__':
     args = parse_arg()
 
 
-    config = cfg_files.config_resnet50_raf.getConfig()
+    config = config_resnet50_raf.getConfig()
     print(config.__dict__)
 
     main(train_data_path= args.train_data_path, image_dir=args.train_image_dir, config= config,
