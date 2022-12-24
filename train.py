@@ -6,7 +6,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 
 # from tensorflow.keras.utils import Progbar
-from keras.utils import Progbar
 
 from models import *
 from data_utils import *
@@ -85,7 +84,7 @@ def train_step(model, optimizer, x_batch_train, y_batch_train, x_batch_aux, conf
             lamb = tf.sigmoid(lamb)
 
         emotion_cls_true = utils.construct_target_distribution(emotion_cls_true, (preds_aux), knn_weights,
-                                                         (attention_weights), lamb=lamb)
+                                                               (attention_weights), lamb=lamb)
 
         emotion_loss = utils.CELoss(emotion_cls_true, emotion_cls_pred, sample_weights)
 
