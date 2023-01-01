@@ -3,13 +3,14 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 import tensorflow as tf
 import numpy as np
-from tensorflow.keras.utils import Progbar
+from keras.utils import Progbar
 import argparse
 from train import *
 from models import *
 from data_utils import *
 import time
 import sys
+from cfg_files import config_resnet50_raf
 sys.path.append("cfg_files")
 
 gpu_devices = tf.config.experimental.list_physical_devices("GPU")
@@ -69,7 +70,14 @@ def main(test_data_path, test_image_dir, config):
 
 if __name__ == '__main__':
     parse_arg()
-    config = __import__(args.cfg).config
+    config = config_resnet50_raf.getConfig()
     print(config.__dict__)
+
+    args.trained_weights = 'trained_weight/epoch_2'
+    args.train_data_path = '/Volumes/out_disk/datasets/RAF-DB/data/raf_train.csv'
+    args.train_image_dir = '/Volumes/out_disk/datasets/RAF-DB/Image/aligned'
+
+    args.test_data_path = '/Volumes/out_disk/datasets/RAF-DB/data/raf_test.csv'
+    args.test_image_dir = '/Volumes/out_disk/datasets/RAF-DB/Image/aligned'
 
     main(test_data_path= args.test_data_path, test_image_dir=args.test_image_dir, config= config)

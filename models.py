@@ -43,7 +43,7 @@ class AdaptiveSimNet(tf.keras.Model):
 
 
 class ExpNet(tf.keras.Model):
-    def __init__(self, num_classes=7, pretrained="msceleb", backbone="resnet50", feature_dim=512):
+    def __init__(self, num_classes=7, pretrained="msceleb", backbone="resnet50", feature_dim=512, backbone_pool=None):
         super(ExpNet, self).__init__()
         self.num_classes = num_classes
 
@@ -54,7 +54,9 @@ class ExpNet(tf.keras.Model):
                 ResNet18, preprocess_input = Classifiers.get('resnet18')
                 self.backbone = ResNet18(input_shape=(224,224,3), weights=pretrained, include_top=False, pooling="avg")
             elif backbone=="resnet50":
-                self.backbone=resNetModel.ResNet50(input_shape=(224,224,3), weights=pretrained, include_top=False, pooling="avg")
+                # self.backbone=resNetModel.ResNet50(input_shape=(112,112,3), weights=pretrained, include_top=False, pooling="avg")
+                self.backbone=resNetModel.ResNet50(input_shape=(112,112,3), weights=pretrained, include_top=False, pooling=None)
+                self.backbone_pool_layer = tf.keras.layers.GlobalMaxPooling2D(name="avg_pool")
             elif backbone=="resnet101":
                 self.backbone=tf.keras.applications.resnet.ResNet101(input_shape=(224,224,3), weights=pretrained, include_top=False, pooling="avg")
             elif backbone=="resnet152":
@@ -75,6 +77,7 @@ class ExpNet(tf.keras.Model):
         else:
             raise ValueError('pretrained type invalid, only supports: None, imagenet, and msceleb')
         self.pretrained=pretrained
+        self.backbone_pool = backbone_pool
         # ================================================================
 
 
@@ -85,9 +88,20 @@ class ExpNet(tf.keras.Model):
         self.weighting_net = AdaptiveSimNet(feature_dim)
 
     def call(self, x, training=False):
+        if self.pretrained == None and self.backbone_pool == None:
+            # x = tf.transpose(x, (0, 3, 1, 2))
+            feat_map_backbone = self.backbone(x, training=training)
+            feat_map = self.backbone_pool_layer(feat_map_backbone)
+
         if self.pretrained=="msceleb":
             x = tf.transpose(x, (0, 3, 1, 2))
-        feat_map = self.backbone(x, training=training)
+            feat_map = self.backbone(x, training=training)
+
+
+
+        backbone_output = []
+        for l in self.backbone.layers:
+            backbone_output.append(l.output)
 
         x = feat_map
         if self.pretrained == "msceleb" and self.backbone_type=='resnet18':
