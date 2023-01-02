@@ -1,6 +1,14 @@
 
 #Version
 
+
+## v0.0.4
+**branch**: our_resnet50_train
+
+**change_log**:
+1. 根据keras.application构建resnet50
+
+
 ## v0.0.3
 **branch**: other_resnet50_train
 
