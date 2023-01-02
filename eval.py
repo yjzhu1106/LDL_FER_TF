@@ -1,12 +1,7 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-import tensorflow as tf
-import numpy as np
-from tensorflow.keras.utils import Progbar
-import argparse
 from train import *
-from model.models import *
 from data_utils import *
 import time
 import sys

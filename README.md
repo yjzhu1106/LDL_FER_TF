@@ -141,7 +141,8 @@ tensorflow-estimator    2.4.0
 tensorflow-gpu          2.4.0
 
 --cfg=config_resnet50_raf
-
+--train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv 
+--train_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned
 
 ```
 

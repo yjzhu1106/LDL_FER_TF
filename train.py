@@ -5,13 +5,14 @@ import numpy as np
 from tensorflow.keras.utils import Progbar
 import pandas as pd
 
-from model.models import *
+from model.models import create_model
 from data_utils import *
 import utils
 
 import argparse
 import sys
 sys.path.append("cfg_files")
+sys.path.append("model")
 
 gpu_devices = tf.config.experimental.list_physical_devices("GPU")
 for device in gpu_devices:
@@ -82,7 +83,7 @@ def train_step(model, optimizer, x_batch_train, y_batch_train, x_batch_aux, conf
             lamb = tf.sigmoid(lamb)
 
         emotion_cls_true = utils.construct_target_distribution(emotion_cls_true, (preds_aux), knn_weights,
-                                                         (attention_weights), lamb=lamb)
+                                                               (attention_weights), lamb=lamb)
 
         emotion_loss = utils.CELoss(emotion_cls_true, emotion_cls_pred, sample_weights)
 
