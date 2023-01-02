@@ -53,7 +53,7 @@ class ExpNet(tf.keras.Model):
                 ResNet18, preprocess_input = Classifiers.get('resnet18')
                 self.backbone = ResNet18(input_shape=(224,224,3), weights=pretrained, include_top=False, pooling="avg")
             elif backbone=="resnet50":
-                self.backbone=tf.keras.applications.ResNet50(input_shape=(224,224,3), weights=pretrained, include_top=False, pooling="avg")
+                self.backbone=tf.keras.applications.ResNet50(input_shape=(112,112,3), weights=pretrained, include_top=False, pooling="avg")
             elif backbone=="resnet101":
                 self.backbone=tf.keras.applications.resnet.ResNet101(input_shape=(224,224,3), weights=pretrained, include_top=False, pooling="avg")
             elif backbone=="resnet152":

@@ -40,6 +40,9 @@ def parse_arg(argv=None):
     parser.add_argument("--cfg", type=str,
                         default="config_resnet50_raf",
                         help="config file_name")
+    parser.add_argument("--pretrained", type=str,
+                        default="msceleb",
+                        help="if msceleb, use pretrained model; Or None, use keras.application.resnet50")
     parser.add_argument("--resume",
                         action= "store_true",
                         help="Resume training from the last checkpoint")
@@ -275,6 +278,10 @@ if __name__ == '__main__':
 
 
     config = __import__(args.cfg).config
+    if args.pretrained != config.pretrained:
+        config.pretrained = args.pretrained
+        config.feature_dim = 2048
+
     print(config.__dict__)
 
     main(train_data_path= args.train_data_path, image_dir=args.train_image_dir, config= config,
