@@ -155,6 +155,7 @@ cd /root/LAL_FER_TF
 conda activate pytf
 git checkout other_code_20230101
 python src/train.py --cfg=config_resnet50_raf --train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv --train_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned
+python train.py --cfg=config_resnet50_raf --train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv --train_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned
 ```
 
 **作者论文改造后，使用原始resnet50的代码**
