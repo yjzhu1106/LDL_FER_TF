@@ -5,7 +5,7 @@ import numpy as np
 from tensorflow.keras.utils import Progbar
 import pandas as pd
 
-from models import *
+from model.models import *
 from data_utils import *
 import utils
 

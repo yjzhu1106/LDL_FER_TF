@@ -25,7 +25,16 @@ pip install tensorflow-metal
 pip install numpy --upgrade
 ```
 
+**autodl服务器**
 
+```shell
+conda create -n pytf python=3.8.0
+conda init bash
+conda activate pytf
+pip install tensorflow-gpu==2.4.0
+pip install pandas opencv-python scikit-learn matplotlib
+pip install git+https://github.com/qubvel/classification_models.git
+```
 
 
 
@@ -118,3 +127,44 @@ python src/eval.py --cfg=config_resnet50_raf --trained_weights=/home/lz/code/lab
 
 #### aligned测试orignal的数据
 python src/eval.py --cfg=config_resnet50_raf --trained_weights=/home/lz/code/label-distribution-learning-fer-tf/aligned_wc/resnet50_raf/epoch_60  --test_data_path=/home/lz/datasets/RAF-DB/data/raf_test_original.csv --test_image_dir=/home/lz/datasets/RAF-DB/Image/original
+
+
+## AUTODL服务器
+
+### envs
+```shell
+matplotlib              3.6.2
+numpy                   1.23.5
+opencv-python           4.6.0.66
+pandas                  1.5.2
+tensorflow-estimator    2.4.0
+tensorflow-gpu          2.4.0
+
+--cfg=config_resnet50_raf
+
+
+```
+
+### RUN the code
+
+**对标论文作者原始代码，使用预训练模型的代码**
+```shell
+cp /root/autodl-tmp/RAF-DB/pretrained /root/LAL_FER_TF/pretrained
+cd /root/LAL_FER_TF
+conda activate pytf
+git checkout other_code_20230101
+python src/train.py --cfg=config_resnet50_raf --train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv --train_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned
+```
+
+**作者论文改造后，使用原始resnet50的代码**
+```shell
+cd /root/LAL_FER_TF
+conda activate pytf
+git checkout other_resnet50_train
+python src/train.py --cfg=config_resnet50_raf --train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv --train_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned
+```
+
+
+
+
+
