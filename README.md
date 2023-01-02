@@ -82,3 +82,39 @@ python src/eval.py --cfg=config_resnet50_raf --trained_weights=trained_weights/t
 
 ```
 
+-
+
+
+# linux Run the model
+
+### network log
+{'name': 'Base Config', 'backbone': 'resnet50', 'feature_dim': 512, 'pretrained': 'msceleb', 'input_size': [112, 112], 'pad_size': 4, 'batch_size
+': 32, 'num_parallel_calls': -1, 'optimizer': 'adam', 'lr': 0.0001, 'lr_decay': 0.1, 'lr_steps': [10, 30], 'gamma': 0.01, 'num_neighbors': 8, 'la
+mb_init': 0.5, 'lamb_lr': 10, 'lamb_beta': 0, 'num_classes': 7, 'class_names': ['Neutral', 'Happy', 'Sad', 'Surprise', 'Fear', 'Disgust', 'Anger'
+], 'class_weights': None, 'val_interval': 200, 'save_interval': 2, 'epochs': 60, 'checkpoint_dir': 'weights_checkpoint/resnet50_raf'}
+
+### 服务器上执行代码(aliged)
+#### 训练
+python src/train.py --cfg=config_resnet50_raf --train_data_path=/home/lz/datasets/RAF-DB/data/raf_train.csv --train_image_dir=/home/lz/datasets/RAF-DB/Image/aligned
+
+python src/train.py --cfg=config_resnet50_raf --train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv --train_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned
+
+python train.py --cfg=config_resnet50_raf --train_data_path=/root/datasets/RAF-DB/data/raf_train.csv --train_image_dir=/root/datasets/RAF-DB/Image/aligned
+
+
+#### 验证测试
+python src/eval.py --cfg=config_resnet50_raf --trained_weights=/home/lz/code/label-distribution-learning-fer-tf/weights_checkpoint/resnet50_raf/epoch_60  --test_data_path=/home/lz/datasets/RAF-DB/data/raf_test.csv --test_image_dir=/home/lz/datasets/RAF-DB/Image/aligned
+
+### 服务器上执行代码(original)
+#### 训练
+python src/train.py --cfg=config_resnet50_raf --train_data_path=/home/lz/datasets/RAF-DB/data/raf_train_original.csv --train_image_dir=/home/lz/datasets/RAF-DB/Image/original
+
+恢复训练
+
+python src/train.py --cfg=config_resnet50_raf --train_data_path=/home/lz/datasets/RAF-DB/data/raf_train_original.csv --train_image_dir=/home/lz/datasets/RAF-DB/Image/original --resume
+
+#### 验证测试
+python src/eval.py --cfg=config_resnet50_raf --trained_weights=/home/lz/code/label-distribution-learning-fer-tf/aligned_wc/resnet50_raf/epoch_60  --test_data_path=/home/lz/datasets/RAF-DB/data/raf_test_original.csv --test_image_dir=/home/lz/datasets/RAF-DB/Image/original
+
+#### aligned测试orignal的数据
+python src/eval.py --cfg=config_resnet50_raf --trained_weights=/home/lz/code/label-distribution-learning-fer-tf/aligned_wc/resnet50_raf/epoch_60  --test_data_path=/home/lz/datasets/RAF-DB/data/raf_test_original.csv --test_image_dir=/home/lz/datasets/RAF-DB/Image/original
