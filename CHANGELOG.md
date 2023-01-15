@@ -2,6 +2,14 @@
 #Version
 
 
+## v0.0.5
+**branch**: our_resnet50_train
+
+**change_log**:
+1. 增加t-sne简单代码
+2、resnet50网络增加参数，决定是否需要全连接层
+3、main启动增加参数--resnetPooling决定是需要全连接层
+
 ## v0.0.4
 **branch**: our_resnet50_train
 

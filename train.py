@@ -43,6 +43,9 @@ def parse_arg(argv=None):
     parser.add_argument("--pretrained", type=str,
                         default="msceleb",
                         help="if msceleb, use pretrained model; Or None, use keras.application.resnet50")
+    parser.add_argument("--resnetPooling", type=str,
+                        default='avg',
+                        help="if avg, max, None")
     parser.add_argument("--resume",
                         action= "store_true",
                         help="Resume training from the last checkpoint")
@@ -281,6 +284,12 @@ if __name__ == '__main__':
     if args.pretrained != config.pretrained:
         config.pretrained = args.pretrained
         config.feature_dim = 2048
+    if args.resnetPooling == 'None':
+        config.resnetPooling = None
+    else:
+        config.resnetPooling = args.resnetPooling
+
+
 
     print(config.__dict__)
 

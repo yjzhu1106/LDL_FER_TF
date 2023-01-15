@@ -45,7 +45,7 @@ class AdaptiveSimNet(tf.keras.Model):
 
 
 class ExpNet(tf.keras.Model):
-    def __init__(self, num_classes=7, pretrained="msceleb", backbone="resnet50", feature_dim=512):
+    def __init__(self, num_classes=7, pretrained="msceleb", backbone="resnet50", resnetPooling="avg",feature_dim=512):
         super(ExpNet, self).__init__()
         self.num_classes = num_classes
 
@@ -56,7 +56,7 @@ class ExpNet(tf.keras.Model):
                 ResNet18, preprocess_input = Classifiers.get('resnet18')
                 self.backbone = ResNet18(input_shape=(224,224,3), weights=pretrained, include_top=False, pooling="avg")
             elif backbone=="resnet50":
-                self.backbone=ResNet50(input_shape=(112,112,3), weights=pretrained, include_top=False, pooling="avg")
+                self.backbone=ResNet50(input_shape=(112,112,3), weights=pretrained, include_top=False, pooling=resnetPooling)
             elif backbone=="resnet101":
                 self.backbone=tf.keras.applications.resnet.ResNet101(input_shape=(224,224,3), weights=pretrained, include_top=False, pooling="avg")
             elif backbone=="resnet152":
@@ -77,9 +77,12 @@ class ExpNet(tf.keras.Model):
         else:
             raise ValueError('pretrained type invalid, only supports: None, imagenet, and msceleb')
         self.pretrained=pretrained
+        self.resnetPooling = resnetPooling
         # ================================================================
 
 
+
+        self.pool = tf.keras.layers.GlobalAveragePooling2D(name='avg_pool')
         self.fc = tf.keras.layers.Dense(num_classes, activation='softmax',
                                         kernel_initializer=tf.keras.initializers.HeNormal(),
                                         kernel_regularizer=tf.keras.regularizers.L2(0.001)
@@ -91,17 +94,24 @@ class ExpNet(tf.keras.Model):
             x = tf.transpose(x, (0, 3, 1, 2))
         feat_map = self.backbone(x, training=training)
 
+        if self.resnetPooling == None:
+            # 如果resnet不走全连接层，那么就走多通道,此时 feat_map<32,4,4,2048>
+            # feat_map = self.multiChannel(x) #todo:先注释掉，看看原来的resnet抽出来全连接层运行如何
+            # 多通道走完之后，只是重组了特征，此处需要 全连接层==》softmax层
+            feat_map = self.pool(feat_map)
+
+
         x = feat_map
         if self.pretrained == "msceleb" and self.backbone_type=='resnet18':
             feat_map = tf.transpose(feat_map, (0, 2, 3, 1))
             x = self.global_pool(feat_map)
-
+        # softmax层
         out = self.fc(x)
 
         return x, out
 
 def create_model(config):
-    model = ExpNet(num_classes=config.num_classes, pretrained=config.pretrained , backbone=config.backbone)
+    model = ExpNet(num_classes=config.num_classes, pretrained=config.pretrained, resnetPooling=config.resnetPooling,backbone=config.backbone)
     model(tf.ones((32, config.input_size[0], config.input_size[1], 3)))
     model.weighting_net(tf.ones((2, config.feature_dim)), tf.ones((2, 4, config.feature_dim)))
     return model

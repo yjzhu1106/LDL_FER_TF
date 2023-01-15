@@ -6,6 +6,7 @@ base_config = Config({
     'backbone': 'resnet50',
     'feature_dim': 512,
     'pretrained': 'msceleb',
+    'resnetPooling': 'avg', # 是否需要最后一层全连接层，默认是avg，可以通过启动参数调节
     
     'input_size': [112, 112],
     'pad_size': 4,
