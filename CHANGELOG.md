@@ -1,6 +1,13 @@
 
 #Version
 
+## v0.0.6
+**branch**: our_resnet50_train
+
+**change_log**:
+1. 每次批次训练，记录损失和准确度
+2. **增加多通道网络，构建创新点1的完整代码**
+
 
 ## v0.0.5
 **branch**: our_resnet50_train

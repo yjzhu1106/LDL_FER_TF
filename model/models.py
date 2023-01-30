@@ -44,6 +44,119 @@ class AdaptiveSimNet(tf.keras.Model):
         # return tf.maximum(scores, 0.2)
 
 
+class MultiChannel(tf.keras.Model):
+    def __init__(self, filters):
+        super(MultiChannel, self).__init__()
+
+        self.f1_conv = tf.keras.Sequential([
+            tf.keras.layers.Conv2D(filters, 1, dilation_rate=1, padding='same', use_bias=False, name='dilated_1_conv'),
+            tf.keras.layers.BatchNormalization(name='normal_1_layer'),
+            tf.keras.layers.Activation('relu', name='activation_1_relu'),
+        ])
+        self.f2_conv = tf.keras.Sequential([
+            tf.keras.layers.Conv2D(filters, 3, dilation_rate=3, padding='same', use_bias=False, name='dilated_2_conv'),
+            tf.keras.layers.BatchNormalization(name='normal_2_layer'),
+            tf.keras.layers.Activation('relu', name='activation_2_relu'),
+        ])
+        self.f3_conv = tf.keras.Sequential([
+            tf.keras.layers.Conv2D(filters, 3, dilation_rate=5, padding='same', use_bias=False, name='dilated_3_conv'),
+            tf.keras.layers.BatchNormalization(name='normal_3_layer'),
+            tf.keras.layers.Activation('relu', name='activation_3_relu'),
+        ])
+        self.f4_conv = tf.keras.Sequential([
+            tf.keras.layers.Conv2D(filters, 3, dilation_rate=7, padding='same', use_bias=False, name='dilated_4_conv'),
+            tf.keras.layers.BatchNormalization(name='normal_4_layer'),
+            tf.keras.layers.Activation('relu', name='activation_4_relu'),
+        ])
+
+        self.add_layer = tf.keras.layers.Add(name='add')
+        self.multiply_layer = tf.keras.layers.Multiply(name='multiply')
+
+        self.sigmoid_activation = tf.keras.layers.Activation('sigmoid', name='activation_sigmoid')
+
+        # self.pool_layer = tf.keras.layers.GlobalAveragePooling2D(name='avg_pool')
+        self.pool_layer_1d = tf.keras.layers.AvgPool1D(name='avg_pool')
+        self.pool_layer = tf.keras.layers.AvgPool2D(pool_size=(1,1),name='avg_pool')
+
+        self.pool_layer_3d = tf.keras.layers.AvgPool3D(name='avg_pool')
+
+
+        self.attention1_conv = tf.keras.Sequential([
+            tf.keras.layers.Conv2D(filters, 3, dilation_rate=7, padding='same', use_bias=False,
+                                   name='dilated_au_1_conv1'),
+            tf.keras.layers.BatchNormalization(name='normal_au_1_layer'),
+            tf.keras.layers.Activation('relu', name='activation_au_1_relu'),
+            tf.keras.layers.Conv2D(filters, 3, dilation_rate=7, padding='same', use_bias=False,
+                                   name='dilated_au_1_conv2'),
+        ])
+
+        self.attention1_conv_dense = tf.keras.layers.Dense(2048)
+        self.attention1_conv_normal = tf.keras.layers.BatchNormalization()
+        self.attention1_conv_relu = tf.keras.layers.Activation('relu'),
+
+
+
+
+        self.attention2_conv = tf.keras.Sequential([
+            tf.keras.layers.Conv2D(filters, 3, dilation_rate=7, padding='same', use_bias=False,
+                                   name='dilated_au_2_conv1'),
+            tf.keras.layers.BatchNormalization(name='normal_au_2_layer'),
+            tf.keras.layers.Activation('relu', name='activation_au_2_relu'),
+            tf.keras.layers.Conv2D(filters, 3, dilation_rate=7, padding='same', use_bias=False,
+                                   name='dilated_au_2_conv2'),
+        ])
+
+
+        self.softmax = tf.keras.layers.Softmax(name='softmax')
+
+
+        self.last_conv = tf.keras.layers.Conv2D(filters, 1, name='last_conv')
+
+
+
+
+    '''
+    网络训练和运行
+    '''
+    def call(self, inputs, training=False):
+        inputs_shape = tf.shape(inputs)
+        B, K, D = inputs_shape[0], inputs_shape[1], inputs_shape[2]
+        filters = inputs.get_shape().as_list()[-1]
+
+        x = inputs
+        f1 = self.f1_conv(x)
+        f2 = self.f2_conv(x)
+        f3 = self.f3_conv(x)
+        f4 = self.f4_conv(x)
+
+        fb1 = self.add_layer([f1, f2])
+        fb2 = self.add_layer([f3, f4])
+
+        wb1 = self.sigmoid_activation(fb1)
+        wb2 = self.sigmoid_activation(fb2)
+
+        fr1 = tf.multiply(fb1, wb1)
+        fr2 = tf.multiply(fb2, wb2)
+
+        yc = self.pool_layer(fr1)
+        zc = self.pool_layer(fr2)
+
+        p1 = self.attention1_conv(yc)
+        p2 = self.attention2_conv(zc)
+
+        p1 = self.softmax(p1)
+        p2 = self.softmax(p2)
+
+        fa1 = self.add_layer([tf.multiply(f1, p1), tf.multiply(f2, p1)])
+        fa2 = self.add_layer([tf.multiply(f3, p2), tf.multiply(f4, p2)])
+
+        fa = self.add_layer([fa1, fa2])
+
+        ffus = self.last_conv(fa)
+
+        return ffus
+
+
 class ExpNet(tf.keras.Model):
     def __init__(self, num_classes=7, pretrained="msceleb", backbone="resnet50", resnetPooling="avg",feature_dim=512):
         super(ExpNet, self).__init__()
@@ -79,7 +192,8 @@ class ExpNet(tf.keras.Model):
         self.pretrained=pretrained
         self.resnetPooling = resnetPooling
         # ================================================================
-
+        # 增加多通道网络构建的代码
+        self.multiChannel = MultiChannel(2048)
 
 
         self.pool = tf.keras.layers.GlobalAveragePooling2D(name='avg_pool')
@@ -96,7 +210,7 @@ class ExpNet(tf.keras.Model):
 
         if self.resnetPooling == None:
             # 如果resnet不走全连接层，那么就走多通道,此时 feat_map<32,4,4,2048>
-            # feat_map = self.multiChannel(x) #todo:先注释掉，看看原来的resnet抽出来全连接层运行如何
+            feat_map = self.multiChannel(feat_map)  # todo:先注释掉，看看原来的resnet抽出来全连接层运行如何
             # 多通道走完之后，只是重组了特征，此处需要 全连接层==》softmax层
             feat_map = self.pool(feat_map)
 

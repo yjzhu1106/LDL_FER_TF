@@ -4,6 +4,7 @@ import tensorflow as tf
 import numpy as np
 from tensorflow.keras.utils import Progbar
 import pandas as pd
+from datetime import datetime
 
 from model.models import create_model
 from data_utils import *
@@ -179,6 +180,10 @@ def train(model, optimizer, train_dataset, global_labels, config,
 
     iter_count = checkpoint.step.numpy()
 
+    # todo: 记录迭代次数下，损失和准确度
+    df = pd.DataFrame(columns=['time', 'epoch', 'loss', 'accuracy', 'lamb'])  # 列名
+    df.to_csv(f'{ckpt_dir}/train_log.csv', index=False)  # 路径可以根据需要更改
+
     for epoch in range(epochs):
         train_loss.reset_states()
         train_accuracy.reset_states()
@@ -231,6 +236,12 @@ def train(model, optimizer, train_dataset, global_labels, config,
         print('End of Epoch: {}, Iter: {}, Train Loss: {:.4}, Emotion Acc: {:.4}'.format(curr_epoch, iter_count,
                                                                                          train_loss.result(),
                                                                                          train_accuracy.result()))
+
+        # todo: 记录每次迭代的损失和准确度
+        list = ["%s"%datetime.now(), epoch, '%.4f' % train_loss.result(), '%.4f' % train_accuracy.result(), '%.4f' % loss_dict['lamb']]
+        data = pd.DataFrame([list])
+        data.to_csv(f'{ckpt_dir}/train_log.csv', mode='a', header=False, index=False)  # mode设为a,就可以向csv文件追加数据了
+
         # Validation
         if val_dataset is not None:
             val_loss.reset_states()
