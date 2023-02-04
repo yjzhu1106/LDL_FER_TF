@@ -245,7 +245,7 @@ def train(model, optimizer, train_dataset, global_labels, config,
         print('End of Epoch: {}, Iter: {}, Train Loss: {:.4}, Emotion Acc: {:.4}'.format(curr_epoch, iter_count,
                                                                                          train_loss.result(),
                                                                                          train_accuracy.result()))
-
+        lamb = loss_dict['lamb']
 
         # Validation
         if val_dataset is not None:
@@ -272,7 +272,7 @@ def train(model, optimizer, train_dataset, global_labels, config,
         list = ["%s" % datetime.now(), epoch,
                 '%.4f' % train_loss.result(),
                 '%.4f' % train_accuracy.result(),
-                '%.4f' % loss_dict['lamb'],
+                '%.4f' % lamb,
                 '%.4f' % val_loss.result(),
                 '%.4f' % val_accuracy.result(),
                 ]
