@@ -51,9 +51,14 @@ def parse_arg(argv=None):
                         action= "store_true",
                         help="Resume training from the last checkpoint")
 
-    parser.add_argument("--save_interval", type=str,
-                        default=None,
+    parser.add_argument("--save_interval", type=int,
+                        default=0,
                         help="Resume training from the last checkpoint")
+
+    parser.add_argument("--val_interval", type=int,
+                        default=0,
+                        help="Resume training from the last checkpoint")
+
 
 
     args = parser.parse_args(argv)
@@ -185,7 +190,7 @@ def train(model, optimizer, train_dataset, global_labels, config,
     iter_count = checkpoint.step.numpy()
 
     # todo: 记录迭代次数下，损失和准确度
-    df = pd.DataFrame(columns=['time', 'epoch', 'loss', 'accuracy', 'lamb', 'val_accuracy'])  # 列名
+    df = pd.DataFrame(columns=['time', 'epoch', 'loss', 'accuracy', 'lamb', 'val_loss', 'val_accuracy'])  # 列名
     df.to_csv(f'{ckpt_dir}/train_log.csv', index=False)  # 路径可以根据需要更改
 
     for epoch in range(epochs):
@@ -227,7 +232,7 @@ def train(model, optimizer, train_dataset, global_labels, config,
                     val_loss(total_loss)  # update metric
                     val_accuracy(emotion_cls_true, preds)  # update metric
                 acc = val_accuracy.result()
-                print("\n---Iterations: {}, Val Acc: {:.4}".format(iter_count, acc))
+                print("\n---Iterations: {}, Val loss: {:.4}, Val Acc: {:.4}".format(iter_count,val_loss.result(), acc))
                 if (acc > best_val):
                     model.save_weights(f"{ckpt_dir}/best_val/Model")
                     print("====Best validation model saved!====")
@@ -241,10 +246,6 @@ def train(model, optimizer, train_dataset, global_labels, config,
                                                                                          train_loss.result(),
                                                                                          train_accuracy.result()))
 
-        # todo: 记录每次迭代的损失和准确度
-        list = ["%s"%datetime.now(), epoch, '%.4f' % train_loss.result(), '%.4f' % train_accuracy.result(), '%.4f' % loss_dict['lamb']]
-        data = pd.DataFrame([list])
-        data.to_csv(f'{ckpt_dir}/train_log.csv', mode='a', header=False, index=False)  # mode设为a,就可以向csv文件追加数据了
 
         # Validation
         if val_dataset is not None:
@@ -266,6 +267,18 @@ def train(model, optimizer, train_dataset, global_labels, config,
                 print("====Best validation model saved!====")
                 best_val = val_accuracy.result()
         print()
+
+        # todo: 记录每次迭代的损失和准确度
+        list = ["%s" % datetime.now(), epoch,
+                '%.4f' % train_loss.result(),
+                '%.4f' % train_accuracy.result(),
+                '%.4f' % loss_dict['lamb'],
+                '%.4f' % val_loss.result(),
+                '%.4f' % val_accuracy.result(),
+                ]
+        data = pd.DataFrame([list])
+        data.to_csv(f'{ckpt_dir}/train_log.csv', mode='a', header=False, index=False)  # mode设为a,就可以向csv文件追加数据了
+
     return model
 
 
@@ -303,9 +316,14 @@ if __name__ == '__main__':
         config.resnetPooling = None
     else:
         config.resnetPooling = args.resnetPooling
-    if args.save_interval != None:
+
+    if args.save_interval != 0:
+        print('Config_save_interval: {}'.format(args.save_interval))
         config.save_interval = args.save_interval
 
+    if args.val_interval != 0:
+        print('Config_val_interval: {}'.format(args.val_interval))
+        config.val_interval = args.val_interval
 
     print(config.__dict__)
 
