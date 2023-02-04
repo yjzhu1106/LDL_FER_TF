@@ -203,6 +203,7 @@ def train(model, optimizer, train_dataset, global_labels, config,
         # Training
         pb_i = Progbar(batches_per_epoch, width=30, interval=0.5,
                        stateful_metrics=['total_loss', 'emotion_loss', 'emotion_acc', 'avg_lamb'])
+        save_lamb = 0
         for x_batch_train, va_regression_true, emotion_cls_true, x_batch_aux, knn_weights, idx, neighbor_idx in train_dataset:
             checkpoint.step.assign_add(1)
             iter_count += 1
@@ -222,6 +223,8 @@ def train(model, optimizer, train_dataset, global_labels, config,
             pb_i.add(1, [('total_loss', total_loss.numpy()),
                          ('emotion_accuracy', emotion_acc),
                          ('avg_lamb', loss_dict['lamb'])])
+
+            save_lamb = loss_dict['lamb']
 
             if iter_count % val_interval == 0 and val_dataset is not None:
                 val_loss.reset_states()
@@ -246,10 +249,6 @@ def train(model, optimizer, train_dataset, global_labels, config,
                                                                                          train_loss.result(),
                                                                                          train_accuracy.result()))
 
-        if loss_dict.has_key('lamb'):
-            lamb = loss_dict['lamb']
-        else:
-            lamb = 0
 
         # Validation
         if val_dataset is not None:
@@ -276,7 +275,7 @@ def train(model, optimizer, train_dataset, global_labels, config,
         list = ["%s" % datetime.now(), epoch,
                 '%.4f' % train_loss.result(),
                 '%.4f' % train_accuracy.result(),
-                '%.4f' % lamb,
+                '%.4f' % save_lamb,
                 '%.4f' % val_loss.result(),
                 '%.4f' % val_accuracy.result(),
                 ]
