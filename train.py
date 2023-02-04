@@ -245,7 +245,11 @@ def train(model, optimizer, train_dataset, global_labels, config,
         print('End of Epoch: {}, Iter: {}, Train Loss: {:.4}, Emotion Acc: {:.4}'.format(curr_epoch, iter_count,
                                                                                          train_loss.result(),
                                                                                          train_accuracy.result()))
-        lamb = loss_dict['lamb']
+
+        if loss_dict.has_key('lamb'):
+            lamb = loss_dict['lamb']
+        else:
+            lamb = 0
 
         # Validation
         if val_dataset is not None:
