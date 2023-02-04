@@ -1,6 +1,13 @@
 
 #Version
 
+## v0.0.7
+**branch**: our_resnet50_train
+
+**change_log**:
+1. --save_interval 迭代次数配置
+
+
 ## v0.0.6
 **branch**: our_resnet50_train
 

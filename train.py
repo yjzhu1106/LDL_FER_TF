@@ -51,6 +51,10 @@ def parse_arg(argv=None):
                         action= "store_true",
                         help="Resume training from the last checkpoint")
 
+    parser.add_argument("--save_interval", type=str,
+                        default=None,
+                        help="Resume training from the last checkpoint")
+
 
     args = parser.parse_args(argv)
     return args
@@ -181,7 +185,7 @@ def train(model, optimizer, train_dataset, global_labels, config,
     iter_count = checkpoint.step.numpy()
 
     # todo: 记录迭代次数下，损失和准确度
-    df = pd.DataFrame(columns=['time', 'epoch', 'loss', 'accuracy', 'lamb'])  # 列名
+    df = pd.DataFrame(columns=['time', 'epoch', 'loss', 'accuracy', 'lamb', 'val_accuracy'])  # 列名
     df.to_csv(f'{ckpt_dir}/train_log.csv', index=False)  # 路径可以根据需要更改
 
     for epoch in range(epochs):
@@ -299,7 +303,8 @@ if __name__ == '__main__':
         config.resnetPooling = None
     else:
         config.resnetPooling = args.resnetPooling
-
+    if args.save_interval != None:
+        config.save_interval = args.save_interval
 
 
     print(config.__dict__)
