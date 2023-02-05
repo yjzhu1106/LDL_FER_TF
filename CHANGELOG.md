@@ -2,6 +2,12 @@
 #Version
 
 
+## v0.0.9
+**branch**: our_resnet50_train
+
+**change_log**:
+1. 增加affectNet数据集处理的脚本
+
 ## v0.0.8
 **branch**: our_resnet50_train
 

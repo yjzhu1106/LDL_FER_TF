@@ -193,3 +193,11 @@ python eval.py --cfg=config_resnet50_raf --trained_weights=/root/autodl-tmp/code
 python datasetUtils/noise_label.py --train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv --dst_data_path=/root/autodl-tmp/RAF-DB/data/ --pre=0.1
 ```
 
+
+**AffectNet数据集的处理**
+```shell
+// train
+python datasetUtils/affectNet_label.py --image_path=/root/autodl-tmp/AffectNet/train_set/images --label_path=/root/autodl-tmp/AffectNet/train_set/annotations --save_path=/root/autodl-tmp/AffectNet/data/aff_train.csv
+// test 
+python datasetUtils/affectNet_label.py --image_path=/root/autodl-tmp/AffectNet/val_set/images --label_path=/root/autodl-tmp/AffectNet/val_set/annotations --save_path=/root/autodl-tmp/AffectNet/data/aff_test.csv
+```
