@@ -25,40 +25,6 @@ def parse_arg(argv=None):
     return args
 
 
-def recreat_data(name, raw_path, dest_path, pre):
-    df = pd.read_csv(raw_path, header=None)
-    data = df.values
-    numSamples, _ = data.shape
-    samNums = (int)(numSamples * pre)  # 需要置换标签总的样本数量
-    k_list = list(collections.Counter(data[1:, 1]).keys())  # 读取样本点类别
-    v_list = list(collections.Counter(data[1:, 1]).values())  # 样本点类别对应的样本数目
-    print(k_list)
-    dff = {}
-    for i in range(len(k_list)):  # 类别循环
-        tag = k_list[i]  # 标签类别
-        dff[i] = df[df[0] == int(tag)].reset_index()  # 提取该类别的样本点
-        samNumsi = int(samNums * (v_list[i] / numSamples))  # 该类别中需要置换的样本数目
-        temp_k = copy.deepcopy(k_list)
-        temp_v = copy.deepcopy(v_list)
-        temp_k.pop(i)  # 将该类别出栈，只保留剩余的类别
-        temp_v.pop(i)  # 将该类别出栈，只保留剩余的类别的样本点数目
-        print("tempk", temp_k)
-        print("temp_v", temp_v)
-        k = 0
-        samNumsij = 0
-        for j in range(len(temp_k)):
-            samNumsij += int(samNumsi * (temp_v[j] / (sum(temp_v))))  # 剩余类别需要置换的样本点数目
-            print("sam", samNumsij)
-            for l in range(k, samNumsij):
-                dff[i].loc[l, 0] = int(temp_k[j])
-                k += 1
-    new = dff[0]
-    for i in range(len(k_list) - 1):
-        new = pd.concat([new, dff[i + 1]])
-    new = shuffle(new).reset_index().drop(['index', 'level_0'], axis=1)  # 打乱顺序
-    new.to_csv(dest_path + name, index=False, header=None)
-
-
 def recreat_data2(name, raw_path, dest_path, pre):
     df = pd.read_csv(raw_path)
     df['expression_backup'] = df['expression']
