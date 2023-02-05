@@ -30,7 +30,7 @@ base_config = Config({
     'class_weights': None,
     'val_interval': 200,  # validate after number of iterations
     'save_interval': 2,  # save model after number of epochs
-    'epochs': 60,
+    'epochs': 2000,
     'checkpoint_dir': "weights_checkpoint/resnet50_raf"
 })
 
