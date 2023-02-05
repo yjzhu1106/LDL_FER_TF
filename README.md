@@ -175,6 +175,9 @@ python train.py --cfg=config_resnet50_raf --train_data_path=/root/autodl-tmp/RAF
 
 // 增加保存迭代的参数 && 测试数据集
 python train.py --cfg=config_resnet50_raf --train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv --train_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned --pretrained=imagenet --resnetPooling=None --save_interval=2 --val_data_path=/root/autodl-tmp/RAF-DB/data/raf_test.csv --val_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned
+// 增加参数验证间隔
+python train.py --cfg=config_resnet50_raf --train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv --train_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned --pretrained=imagenet --resnetPooling=None --save_interval=5 --val_interval=200 --val_data_path=/root/autodl-tmp/RAF-DB/data/raf_test.csv --val_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned | tee /root/autodl-nas/paper1_origin_result/train_log.txt
+
 ```
 
 
@@ -184,4 +187,9 @@ python train.py --cfg=config_resnet50_raf --train_data_path=/root/autodl-tmp/RAF
 python eval.py --cfg=config_resnet50_raf --trained_weights=/root/autodl-tmp/code/LDL_FER_TF/weights_checkpoint/resnet50_raf/epoch_60 --test_data_path=/root/autodl-tmp/RAF-DB/data/raf_test.csv --test_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned --pretrained=imagenet --resnetPooling=None --trained_weights_dir=/root/autodl-tmp/code/LDL_FER_TF/weights_checkpoint/resnet50_raf/
 ```
 
+
+**生成噪音标签**
+```shell
+python datasetUtils/noise_label.py --train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv --dst_data_path=/root/autodl-tmp/RAF-DB/data/ --pre=0.1
+```
 

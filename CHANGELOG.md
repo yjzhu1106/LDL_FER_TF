@@ -1,6 +1,13 @@
 
 #Version
 
+
+## v0.0.8
+**branch**: our_resnet50_train
+
+**change_log**:
+1. 增加噪音标签生成脚本
+
 ## v0.0.7
 **branch**: our_resnet50_train
 
