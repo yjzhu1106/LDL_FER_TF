@@ -111,7 +111,8 @@ def recreat_data2(name, raw_path, dest_path, pre):
     for index, convert_label in label_convert.items():
         data[index][1] = convert_label
     new_pd = pd.DataFrame(data)
-    new_pd.to_csv(dest_path+name, index=False, header=None)
+    new_pd.to_csv(dest_path+name, index=False,
+                  header=['subDirectory_filePath', 'expression', 'valence', 'arousal', 'knn', 'expression_backup'])
 
 
 if __name__ == '__main__':
