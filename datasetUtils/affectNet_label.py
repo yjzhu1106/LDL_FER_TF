@@ -94,7 +94,7 @@ def getKnn(subDirectory_filePath, valence, arousal):
             k_neighbors = np.append(k_neighbors, distance)
         result = getMinIndex(k_neighbors, i)
         knn.append(result)
-
+        print(subDirectory_filePath[i], 'computer knn done.==>', i)
     return knn
 
 
