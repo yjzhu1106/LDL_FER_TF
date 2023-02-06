@@ -38,9 +38,9 @@ def getAttr(image_path, label_path):
 
     i = 1
     for image_file_path in image_path.iterdir():
-        if i == 2000:
-            break
-        i = i+ 1
+        # if i == 2000:
+        #     break
+        # i = i+ 1
 
         flag_exp = 0
         flag_aro = 0
