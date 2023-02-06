@@ -104,16 +104,23 @@ def getKnn(subDirectory_filePath, valence, arousal):
     start = time.time()
     knn = []  # 二维数组，第一维对应每一个图片，第二位是20个最近的邻居；
 
+    save_interval = 20
+    flag = 0
     for i in range(samples):
+        flag = flag + 1
         # k_neighbors = []
         # root_v = mt.tensor(valence[i], gpu=True)
         # root_a = mt.tensor(arousal[i], gpu=True)
         root_v = valence[i]
         root_a = arousal[i]
+        s = time.time()
         k_neighbors = [float(get_distance(valence, arousal, root_a, root_v, j)) for j in range(samples)]
-
+        e = time.time()
+        print('i: {}, time: {}'.format(i, (e-s)))
         knn.append(k_neighbors)
         pb_i.add(1, [('knn', len(knn))])
+        if i % save_interval == 0:
+            np.save("/root/autodl-tmp/AffectNet/data/knn_distance.npy", knn)
 
         # k_neighbors = [mr.spawn(get_distance, args=(valence, arousal, root_a, root_v, j))
         #                 for j in range(samples)]
