@@ -8,6 +8,9 @@ import heapq
 import cupy as cp
 import time
 from tensorflow.keras.utils import Progbar
+import mars
+import mars.remote as mr
+import mars.tensor as mt
 
 
 def parse_arg(argv=None):
@@ -38,9 +41,9 @@ def getAttr(image_path, label_path):
 
     i = 1
     for image_file_path in image_path.iterdir():
-        # if i == 2000:
-        #     break
-        # i = i+ 1
+        if i == 200:
+            break
+        i = i+ 1
 
         flag_exp = 0
         flag_aro = 0
@@ -97,29 +100,66 @@ def getKnn(subDirectory_filePath, valence, arousal):
                    stateful_metrics=['knn'])
 
 
+    print('>>>>>>>>>>>>start computer distance>>>>>>>>>>>>>')
+    start = time.time()
     knn = []  # 二维数组，第一维对应每一个图片，第二位是20个最近的邻居；
 
     for i in range(samples):
-        k_neighbors = []
+        # k_neighbors = []
+        # root_v = mt.tensor(valence[i], gpu=True)
+        # root_a = mt.tensor(arousal[i], gpu=True)
         root_v = valence[i]
         root_a = arousal[i]
+        k_neighbors = [float(get_distance(valence, arousal, root_a, root_v, j)) for j in range(samples)]
 
-        for j in range(samples):
-            node_v = valence[j]
-            node_a = arousal[j]
-
-            diff_a = cp.subtract(node_a, root_a)
-            diff_b = cp.subtract(node_v, root_v)
-
-            distance = cp.sqrt(cp.add(cp.multiply(diff_a, diff_a),cp.multiply(diff_b, diff_b)))
-            k_neighbors = np.append(k_neighbors, distance)
-        result = getMinIndex(cp.asnumpy(k_neighbors), i)
-        knn.append(result)
+        knn.append(k_neighbors)
         pb_i.add(1, [('knn', len(knn))])
-    return knn
+
+        # k_neighbors = [mr.spawn(get_distance, args=(valence, arousal, root_a, root_v, j))
+        #                 for j in range(samples)]
+
+
+        # for j in range(samples):
+        #     node_v = valence[j]
+        #     node_a = arousal[j]
+        #
+        #     diff_a = cp.subtract(node_a, root_a)
+        #     diff_b = cp.subtract(node_v, root_v)
+        #
+        #     distance = cp.sqrt(cp.add(cp.multiply(diff_a, diff_a),cp.multiply(diff_b, diff_b)))
+        #     k_neighbors = np.append(k_neighbors, distance)
+        # result = getMinIndex(cp.asnumpy(k_neighbors), i)
+        # knn.append(k_neighbors)
+
+        # knn = mr.spawn(getMinIndex, args=(k_neighbors, i))
+        # result = knn.execute()
+        # knn.append()
+    end = time.time()
+    print('>>>>>>>>>>>>end computer distance, time:  %s Seconds>>>>>>>>>>>>' % (end - start))
+    result = [getMinIndex(knn[i], i) for i in range(len(knn))]
+    end2 = time.time()
+    print('>>>>>>>>>>>>end computer distance min index, time:  %s Seconds>>>>>>>>>>>>' % (end2 - end))
+
+    return result
+
+
+def get_distance(valence, arousal, root_a, root_v, j):
+    node_v = valence[j]
+    node_a = arousal[j]
+
+    diff_a = cp.subtract(node_a, root_a)
+    diff_b = cp.subtract(node_v, root_v)
+
+    distance = cp.sqrt(cp.add(cp.multiply(diff_a, diff_a), cp.multiply(diff_b, diff_b)))
+    # diff_a = node_a - root_a
+    # diff_v = node_v - root_v
+    # distance = math.sqrt(diff_v * diff_v + diff_a * diff_a)
+
+    return distance
 
 
 def getMinIndex(arr, root_index):
+    # arr = cp.asnumpy(arr)
     arr = list(arr)
     ##求最小的5个值
     arr_min = heapq.nsmallest(21, arr)  # 获取最小的五个值并排序
@@ -139,26 +179,25 @@ def getMinIndex(arr, root_index):
         index = dis_index_dict[dis]
         if root_index == index:
             continue
-        result= result + str(index) + ';'
+        result = result + str(index) + ';'
     result = result.strip(';')
-
 
     return result
 
 
 if __name__ == '__main__':
+    # mars.new_session()
     args = parse_arg()
 
     image_path = Path(args.image_path)
     label_path = Path(args.label_path)
-    print('>>>>>>>beigin get image attribute>>>>>>>>>>>>' )
+    print('>>>>>>>beigin get image attribute>>>>>>>>>>>>')
     print()
     start = time.time()
     subDirectory_filePath, expression, valence, arousal = getAttr(image_path=image_path, label_path=label_path)
     end = time.time()
     print()
-    print('>>>>>>>end get image attribute, time:  %s Seconds>>>>>>>>>>>>'%(end-start))
-
+    print('>>>>>>>end get image attribute, time:  %s Seconds>>>>>>>>>>>>' % (end - start))
 
     df = pd.DataFrame(subDirectory_filePath)
     # df.columns = ['subDirectory_filePath', 'expression', 'valence', 'arousal', 'knn', 'expression_backup']
@@ -167,14 +206,21 @@ if __name__ == '__main__':
     df['valence'] = valence
     df['arousal'] = arousal
 
+    np.save("/root/autodl-tmp/AffectNet/data/expression.npy", expression)
+    np.save("/root/autodl-tmp/AffectNet/data/valence.npy", valence)
+    np.save("/root/autodl-tmp/AffectNet/data/arousal.npy", arousal)
+
     '''转换数组为GPU可以接受的数组，来用GPU计算'''
     v_cp = cp.asarray(valence)
     a_cp = cp.asarray(arousal)
 
-
+    # v_cp = mt.tensor(valence, gpu=True)
+    # a_cp = mt.tensor(arousal, gpu=True)
     '''获取每个图片最近的20个图片'''
     knn = getKnn(subDirectory_filePath, v_cp, a_cp)
     df['knn']=knn
 
     df.to_csv(args.save_path, index=False,
-                  header=['subDirectory_filePath', 'expression', 'valence', 'arousal', 'knn'])
+              header=['subDirectory_filePath', 'expression', 'valence', 'arousal', 'knn'])
+
+    mars.stop_server()
