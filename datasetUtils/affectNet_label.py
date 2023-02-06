@@ -36,8 +36,11 @@ def getAttr(image_path, label_path):
     pb_i = Progbar(287651, width=50, interval=0.01,
                    stateful_metrics=['_exp', '_aro', '_val'])
 
-    # i = 1
+    i = 1
     for image_file_path in image_path.iterdir():
+        if i == 2000:
+            break
+        i = i+ 1
 
         flag_exp = 0
         flag_aro = 0
@@ -87,7 +90,13 @@ def getAttr(image_path, label_path):
 
 
 def getKnn(subDirectory_filePath, valence, arousal):
+
+
     samples = len(subDirectory_filePath)
+    pb_i = Progbar(samples, width=50, interval=0.01,
+                   stateful_metrics=['knn'])
+
+
     knn = []  # 二维数组，第一维对应每一个图片，第二位是20个最近的邻居；
 
     for i in range(samples):
@@ -106,7 +115,7 @@ def getKnn(subDirectory_filePath, valence, arousal):
             k_neighbors = np.append(k_neighbors, distance)
         result = getMinIndex(cp.asnumpy(k_neighbors), i)
         knn.append(result)
-        print(subDirectory_filePath[i], 'computer knn done.==>', i)
+        pb_i.add(1, [('knn', len(knn))])
     return knn
 
 
@@ -143,9 +152,11 @@ if __name__ == '__main__':
     image_path = Path(args.image_path)
     label_path = Path(args.label_path)
     print('>>>>>>>beigin get image attribute>>>>>>>>>>>>' )
+    print()
     start = time.time()
     subDirectory_filePath, expression, valence, arousal = getAttr(image_path=image_path, label_path=label_path)
     end = time.time()
+    print()
     print('>>>>>>>end get image attribute, time:  %s Seconds>>>>>>>>>>>>'%(end-start))
 
 
