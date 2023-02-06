@@ -5,6 +5,9 @@ import pandas as pd
 import argparse
 import math
 import heapq
+import cupy as cp
+import time
+from tensorflow.keras.utils import Progbar
 
 
 def parse_arg(argv=None):
@@ -30,12 +33,15 @@ def getAttr(image_path, label_path):
     arousal = []
 
     expression_backup = []
+    pb_i = Progbar(287651, width=50, interval=0.01,
+                   stateful_metrics=['_exp', '_aro', '_val'])
 
     # i = 1
     for image_file_path in image_path.iterdir():
-        # if i == 100:
-        #     break
-        # i = i + 1
+
+        flag_exp = 0
+        flag_aro = 0
+        flag_val = 0
 
         image_name = image_file_path.name.split('.')[0]
 
@@ -49,16 +55,19 @@ def getAttr(image_path, label_path):
 
         if img_label_path.exists() and not img_label_path.is_dir():
             label = int(np.load(img_label_path).astype(int))
+            flag_exp = 1
         else:
             print(img_label_name + ' not exists!!!')
 
         if img_aro_path.exists() and not img_aro_path.is_dir():
             aro = float(np.load(img_aro_path).astype(float))
+            flag_aro = 1
         else:
             print(img_aro_name + ' not exists!!!')
 
         if img_val_path.exists() and not img_val_path.is_dir():
             val = float(np.load(img_val_path).astype(float))
+            flag_val = 1
         else:
             print(img_val_name + ' not exists!!!')
 
@@ -68,6 +77,9 @@ def getAttr(image_path, label_path):
         arousal = np.append(arousal, val)
 
         expression_backup = np.append(expression_backup, label)
+        pb_i.add(1, [('_exp', flag_exp),
+                     ('_aro', flag_aro),
+                     ('_val', flag_val)])
 
     expression = expression.astype(int)
 
@@ -87,12 +99,12 @@ def getKnn(subDirectory_filePath, valence, arousal):
             node_v = valence[j]
             node_a = arousal[j]
 
-            diff_a = node_a - root_a
-            diff_b = node_v - root_v
+            diff_a = cp.subtract(node_a, root_a)
+            diff_b = cp.subtract(node_v, root_v)
 
-            distance = math.sqrt(diff_a * diff_a + diff_b * diff_b)
+            distance = cp.sqrt(cp.add(cp.multiply(diff_a, diff_a),cp.multiply(diff_b, diff_b)))
             k_neighbors = np.append(k_neighbors, distance)
-        result = getMinIndex(k_neighbors, i)
+        result = getMinIndex(cp.asnumpy(k_neighbors), i)
         knn.append(result)
         print(subDirectory_filePath[i], 'computer knn done.==>', i)
     return knn
@@ -130,8 +142,12 @@ if __name__ == '__main__':
 
     image_path = Path(args.image_path)
     label_path = Path(args.label_path)
-
+    print('>>>>>>>beigin get image attribute>>>>>>>>>>>>' )
+    start = time.time()
     subDirectory_filePath, expression, valence, arousal = getAttr(image_path=image_path, label_path=label_path)
+    end = time.time()
+    print('>>>>>>>end get image attribute, time:  %s Seconds>>>>>>>>>>>>'%(end-start))
+
 
     df = pd.DataFrame(subDirectory_filePath)
     # df.columns = ['subDirectory_filePath', 'expression', 'valence', 'arousal', 'knn', 'expression_backup']
@@ -140,8 +156,13 @@ if __name__ == '__main__':
     df['valence'] = valence
     df['arousal'] = arousal
 
+    '''转换数组为GPU可以接受的数组，来用GPU计算'''
+    v_cp = cp.asarray(valence)
+    a_cp = cp.asarray(arousal)
+
+
     '''获取每个图片最近的20个图片'''
-    knn = getKnn(subDirectory_filePath, valence, arousal)
+    knn = getKnn(subDirectory_filePath, v_cp, a_cp)
     df['knn']=knn
 
     df.to_csv(args.save_path, index=False,
