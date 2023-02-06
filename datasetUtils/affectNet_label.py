@@ -96,8 +96,8 @@ def getKnn(subDirectory_filePath, valence, arousal):
 
 
     samples = len(subDirectory_filePath)
-    pb_i = Progbar(samples, width=50, interval=0.01,
-                   stateful_metrics=['knn'])
+    pb_j = Progbar(samples, width=50, interval=0.01,
+                   stateful_metrics=['knn','time'])
 
 
     print('>>>>>>>>>>>>start computer distance>>>>>>>>>>>>>')
@@ -116,9 +116,9 @@ def getKnn(subDirectory_filePath, valence, arousal):
         s = time.time()
         k_neighbors = [float(get_distance(valence, arousal, root_a, root_v, j)) for j in range(samples)]
         e = time.time()
-        print('i: {}, time: {}'.format(i, (e-s)))
+        # print('i: {}, time: {}'.format(i, (e-s)))
         knn.append(k_neighbors)
-        pb_i.add(1, [('knn', len(knn))])
+        pb_j.add(1, [('knn', len(knn)),('time', (e-s))])
         if i % save_interval == 0:
             np.save("/root/autodl-tmp/AffectNet/data/knn_distance.npy", knn)
 
