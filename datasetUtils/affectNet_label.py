@@ -25,6 +25,12 @@ def parse_arg(argv=None):
     parser.add_argument("--save_path", type=str,
                         default="/root/autodl-tmp/AffectNet/data/aff_test.csv",
                         help="affectNet数据集标签和VA的路径")
+    parser.add_argument("--load_label_npy", type=str,
+                        default='load',
+                        help="affectNet数据集标签和VA的路径")
+    parser.add_argument("--load_knn_txt", type=str,
+                        default='load',
+                        help="affectNet数据集标签和VA的路径")
     args = parser.parse_args(argv)
     return args
 
@@ -65,6 +71,9 @@ def getAttr(image_path, label_path):
         else:
             print(img_label_name + ' not exists!!!')
 
+        if label == 7: # 7 代表Contempt，在我们的模型中只使用六种基本表情，7不使用
+            continue
+
         if img_aro_path.exists() and not img_aro_path.is_dir():
             aro = float(np.load(img_aro_path).astype(float))
             flag_aro = 1
@@ -102,50 +111,51 @@ def getKnn(subDirectory_filePath, valence, arousal):
 
     print('>>>>>>>>>>>>start computer distance>>>>>>>>>>>>>')
     start = time.time()
-    knn = []  # 二维数组，第一维对应每一个图片，第二位是20个最近的邻居；
+    knn = []  # array组成的list
+    knn_list = [] # list组成的list
+    # if args.load_knn_txt == 'load':
+    #     file = open("/root/autodl-tmp/AffectNet/data/knn_distance.txt", 'r')
+    #     knn = eval(file.read())
+    #     file.close()
+    #     samples = 0
 
-    save_interval = 20
-    flag = 0
+    save_interval = 50000
+    flag = 1
+    result = []
     for i in range(samples):
         flag = flag + 1
+
+        # if flag == 100:
+        #     break
         # k_neighbors = []
         # root_v = mt.tensor(valence[i], gpu=True)
         # root_a = mt.tensor(arousal[i], gpu=True)
         root_v = valence[i]
         root_a = arousal[i]
         s = time.time()
-        k_neighbors = [float(get_distance(valence, arousal, root_a, root_v, j)) for j in range(samples)]
+        k_neighbors = get_distance2(valence, arousal, root_a, root_v)
+
+        result = np.append(result, getMinIndex(k_neighbors, i))
+
         e = time.time()
         # print('i: {}, time: {}'.format(i, (e-s)))
-        knn.append(k_neighbors)
-        pb_j.add(1, [('knn', len(knn)),('time', (e-s))])
-        if i % save_interval == 0:
-            np.save("/root/autodl-tmp/AffectNet/data/knn_distance.npy", knn)
-
-        # k_neighbors = [mr.spawn(get_distance, args=(valence, arousal, root_a, root_v, j))
-        #                 for j in range(samples)]
-
-
-        # for j in range(samples):
-        #     node_v = valence[j]
-        #     node_a = arousal[j]
-        #
-        #     diff_a = cp.subtract(node_a, root_a)
-        #     diff_b = cp.subtract(node_v, root_v)
-        #
-        #     distance = cp.sqrt(cp.add(cp.multiply(diff_a, diff_a),cp.multiply(diff_b, diff_b)))
-        #     k_neighbors = np.append(k_neighbors, distance)
-        # result = getMinIndex(cp.asnumpy(k_neighbors), i)
         # knn.append(k_neighbors)
+        pb_j.add(1, [('result', len(result)),('time', (e-s))])
 
-        # knn = mr.spawn(getMinIndex, args=(k_neighbors, i))
-        # result = knn.execute()
-        # knn.append()
+        if i % save_interval == 0 and not i == 0:
+            for ll in knn:
+                knn_list.append(cp.asnumpy(ll))
+            np.save("/root/autodl-tmp/AffectNet/data/knn_distance.npy", np.array(knn_list))
+
+            # knn_list = np.load("/root/autodl-tmp/AffectNet/data/knn_distance.npy")
+            # knn_list = list(knn_list)
+
+    # for ll in knn:
+    #     knn_list.append(cp.asnumpy(ll))
+    np.save("/root/autodl-tmp/AffectNet/data/knn_distance.npy", list(result))
+
     end = time.time()
     print('>>>>>>>>>>>>end computer distance, time:  %s Seconds>>>>>>>>>>>>' % (end - start))
-    result = [getMinIndex(knn[i], i) for i in range(len(knn))]
-    end2 = time.time()
-    print('>>>>>>>>>>>>end computer distance min index, time:  %s Seconds>>>>>>>>>>>>' % (end2 - end))
 
     return result
 
@@ -164,12 +174,21 @@ def get_distance(valence, arousal, root_a, root_v, j):
 
     return distance
 
+def get_distance2(valence, arousal, root_a, root_v):
+
+    diff_a = cp.subtract(arousal, root_a)
+    diff_v = cp.subtract(valence, root_v)
+
+    distance = cp.sqrt(cp.add(cp.multiply(diff_a, diff_a), cp.multiply(diff_v, diff_v)))
+
+    return distance
+
 
 def getMinIndex(arr, root_index):
-    # arr = cp.asnumpy(arr)
+    arr = cp.asnumpy(arr)
     arr = list(arr)
     ##求最小的5个值
-    arr_min = heapq.nsmallest(21, arr)  # 获取最小的五个值并排序
+    arr_min = heapq.nsmallest(51, arr)  # 获取最小的五个值并排序
     index_min = map(arr.index, arr_min)  # 获取最小的五个值的下标
     # print(arr_min)
 
@@ -182,11 +201,15 @@ def getMinIndex(arr, root_index):
     arr_min.sort()
 
     result = ''
+    i = 1
     for dis in arr_min:
         index = dis_index_dict[dis]
         if root_index == index:
             continue
         result = result + str(index) + ';'
+        if i == 21:
+            break
+        i = i + 1
     result = result.strip(';')
 
     return result
@@ -201,7 +224,17 @@ if __name__ == '__main__':
     print('>>>>>>>beigin get image attribute>>>>>>>>>>>>')
     print()
     start = time.time()
-    subDirectory_filePath, expression, valence, arousal = getAttr(image_path=image_path, label_path=label_path)
+    if args.load_label_npy == 'save':
+        subDirectory_filePath, expression, valence, arousal = getAttr(image_path=image_path, label_path=label_path)
+        np.save("/root/autodl-tmp/AffectNet/data/expression.npy", expression)
+        np.save("/root/autodl-tmp/AffectNet/data/valence.npy", valence)
+        np.save("/root/autodl-tmp/AffectNet/data/arousal.npy", arousal)
+        np.save("/root/autodl-tmp/AffectNet/data/subDirectory_filePath.npy", subDirectory_filePath)
+    else:
+        expression = np.load('/root/autodl-tmp/AffectNet/data/expression.npy')
+        valence = np.load("/root/autodl-tmp/AffectNet/data/valence.npy")
+        arousal = np.load("/root/autodl-tmp/AffectNet/data/arousal.npy")
+        subDirectory_filePath = np.load("/root/autodl-tmp/AffectNet/data/subDirectory_filePath.npy")
     end = time.time()
     print()
     print('>>>>>>>end get image attribute, time:  %s Seconds>>>>>>>>>>>>' % (end - start))
@@ -213,9 +246,6 @@ if __name__ == '__main__':
     df['valence'] = valence
     df['arousal'] = arousal
 
-    np.save("/root/autodl-tmp/AffectNet/data/expression.npy", expression)
-    np.save("/root/autodl-tmp/AffectNet/data/valence.npy", valence)
-    np.save("/root/autodl-tmp/AffectNet/data/arousal.npy", arousal)
 
     '''转换数组为GPU可以接受的数组，来用GPU计算'''
     v_cp = cp.asarray(valence)
