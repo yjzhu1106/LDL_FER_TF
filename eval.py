@@ -44,9 +44,21 @@ def parse_arg(argv=None):
     parser.add_argument("--trained_weights", type=str,
                         default=None,
                         help="load the trained weights of the model in /path/to/model_weights")
+    parser.add_argument("--trained_weights_dir", type=str,
+                        default=None,
+                        help="加载模型的目录，循环遍历多次迭代寻找一个最好的测试准确率")
+
     parser.add_argument("--cfg", type=str,
                         default="config_resnet50_raf",
                         help="config file_name")
+
+    parser.add_argument("--pretrained", type=str,
+                        default="msceleb",
+                        help="if msceleb, use pretrained model; Or None, use keras.application.resnet50")
+    parser.add_argument("--resnetPooling", type=str,
+                        default='avg',
+                        help="if avg, max, None")
+
 
     global args
     args = parser.parse_args(argv)
@@ -65,6 +77,16 @@ def main(test_data_path, test_image_dir, config):
 if __name__ == '__main__':
     parse_arg()
     config = __import__(args.cfg).config
+
+    config = __import__(args.cfg).config
+    if args.pretrained != config.pretrained:
+        config.pretrained = args.pretrained
+        config.feature_dim = 2048
+    if args.resnetPooling == 'None':
+        config.resnetPooling = None
+    else:
+        config.resnetPooling = args.resnetPooling
+
     print(config.__dict__)
 
     main(test_data_path= args.test_data_path, test_image_dir=args.test_image_dir, config= config)

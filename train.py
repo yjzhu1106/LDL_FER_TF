@@ -59,6 +59,10 @@ def parse_arg(argv=None):
                         default=0,
                         help="Resume training from the last checkpoint")
 
+    parser.add_argument("--batch_size", type=int,
+                        default=32,
+                        help="Resume training from the last checkpoint")
+
 
 
     args = parser.parse_args(argv)
@@ -327,6 +331,10 @@ if __name__ == '__main__':
     if args.val_interval != 0:
         print('Config_val_interval: {}'.format(args.val_interval))
         config.val_interval = args.val_interval
+
+    if args.batch_size != 32:
+        print('batch_size: {}'.format(args.batch_size))
+        config.batch_size = args.batch_size
 
     print(config.__dict__)
 

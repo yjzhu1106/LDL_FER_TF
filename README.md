@@ -37,7 +37,17 @@ pip install git+https://github.com/qubvel/classification_models.git
 ```
 
 
-
+# 外接硬盘文件目录描述
+```
+autodl-nas
+    paper1_noise_result
+        best_val_10_8563: 噪音标签为10%训练后的模型，已经损失和准确度记录；
+        best_val_20_8455: 噪音标签为20%训练后的模型，已经损失和准确度记录；
+        best_val_30_8341: 噪音标签为30%训练后的模型，已经损失和准确度记录；
+    paper1_origin_result
+        best_val_8732: 原始模型训练的结果
+        best_val_8755: 原始模型训练的结果
+```
 
 
 # Datasets
@@ -145,6 +155,53 @@ tensorflow-gpu          2.4.0
 --train_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned
 
 ```
+# 数据集的处理
+
+## RAF-DB数据集的面部遮挡
+**对RAF-DB的测试集图片进行遮挡**
+```shell
+git clone https://github.com/aqeelanwar/MaskTheFace.git
+python mask_the_face.py --path=/root/autodl-tmp/RAF-DB-mask/Image/aligned --mask_type=surgical_blue --color=#ffffff --color_weight=0.5
+```
+mask_type取值：["surgical", "N95", "KN95", "cloth", "gas", "inpaint", "random", "all"],
+
+color取值：'"#fc1c1a","#177ABC","#94B6D2","#A5AB81","#DD8047","#6b425e","#e26d5a","#c92c48","#6a506d","#ffc900",'
+             ' "#ffffff","#000000","#49ff00","#0473e2""'
+
+**此时获取到数据集图像上遮挡，文件的命名也包含遮挡物的类型后缀，所以需要更改csv文件中的文件名**
+```shell
+cp /root/autodl-tmp/RAF-DB/data/raf_test.csv /root/autodl-tmp/RAF-DB/data/raf_test_gas.csv
+// mac命令
+sed -i '' "s/.jpg/_gas.jpg/g" /root/autodl-tmp/RAF-DB/data/raf_test_gas.csv
+// autodl服务器命令
+sed -i "s/.jpg/_gas.jpg/g" /root/autodl-tmp/RAF-DB/data/raf_test_gas.csv
+
+cp /root/autodl-tmp/RAF-DB/data/raf_test.csv /root/autodl-tmp/RAF-DB/data/raf_test_kn95.csv
+// mac命令
+sed -i '' "s/.jpg/_KN95.jpg/g" /root/autodl-tmp/RAF-DB/data/raf_test_kn95.csv
+// autodl服务器命令
+sed -i "s/.jpg/_KN95.jpg/g" /root/autodl-tmp/RAF-DB/data/raf_test_kn95.csv
+
+
+cp /root/autodl-tmp/RAF-DB/data/raf_test.csv /root/autodl-tmp/RAF-DB/data/raf_test_surgical_blue.csv
+// mac命令
+sed -i '' "s/.jpg/_surgical_blue.jpg/g" /root/autodl-tmp/RAF-DB/data/raf_test_surgical_blue.csv
+// autodl服务器命令
+sed -i "s/.jpg/_surgical_blue.jpg/g" /root/autodl-tmp/RAF-DB/data/raf_test_surgical_blue.csv
+```
+
+
+
+
+## AffectNet数据集的处理
+**AffectNet数据集的处理，获取训练接和测试集的csv文件**
+```shell
+// train
+python datasetUtils/affectNet_label.py --image_path=/root/autodl-tmp/AffectNet/train_set/images --label_path=/root/autodl-tmp/AffectNet/train_set/annotations --save_path=/root/autodl-tmp/AffectNet/data/aff_train.csv
+// test 
+python datasetUtils/affectNet_label.py --image_path=/root/autodl-tmp/AffectNet/val_set/images --label_path=/root/autodl-tmp/AffectNet/val_set/annotations --save_path=/root/autodl-tmp/AffectNet/data/aff_test.csv
+```
+
 
 ### RUN the code
 
@@ -175,29 +232,80 @@ python train.py --cfg=config_resnet50_raf --train_data_path=/root/autodl-tmp/RAF
 
 // 增加保存迭代的参数 && 测试数据集
 python train.py --cfg=config_resnet50_raf --train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv --train_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned --pretrained=imagenet --resnetPooling=None --save_interval=2 --val_data_path=/root/autodl-tmp/RAF-DB/data/raf_test.csv --val_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned
-// 增加参数验证间隔
+// 增加参数验证间隔 【正确的模型训练跑的命令】
 python train.py --cfg=config_resnet50_raf --train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv --train_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned --pretrained=imagenet --resnetPooling=None --save_interval=5 --val_interval=200 --val_data_path=/root/autodl-tmp/RAF-DB/data/raf_test.csv --val_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned | tee /root/autodl-nas/paper1_origin_result/train_log.txt
 
 ```
 
-
-
-**一次性测试在多个epoch上的准确率**
+# 验证
+**一次性测试在多个epoch上的准确率**【废弃】
 ```shell
 python eval.py --cfg=config_resnet50_raf --trained_weights=/root/autodl-tmp/code/LDL_FER_TF/weights_checkpoint/resnet50_raf/epoch_60 --test_data_path=/root/autodl-tmp/RAF-DB/data/raf_test.csv --test_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned --pretrained=imagenet --resnetPooling=None --trained_weights_dir=/root/autodl-tmp/code/LDL_FER_TF/weights_checkpoint/resnet50_raf/
 ```
 
+## 在pycharm中远程连接autodl，验证模型效果的参数配置
 
-**生成噪音标签**
+**RAF-DB数据集**
+```shell
+# 正常的验证逻辑
+--cfg=config_resnet50_raf
+--trained_weights=/root/autodl-nas/paper1_origin_result/best_val_8755
+--test_data_path=/root/autodl-tmp/RAF-DB/data/raf_test.csv
+--test_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned
+--pretrained=imagenet
+--resnetPooling=None
+--trained_weights_dir=/root/autodl-tmp/code/LDL_FER_TF/weights_checkpoint/resnet50_raf/
+
+# 10%噪音标签的验证逻辑
+--cfg=config_resnet50_raf
+--trained_weights=/root/autodl-nas/paper1_noise_result/best_val_10_8563
+--test_data_path=/root/autodl-tmp/RAF-DB/data/raf_test.csv
+--test_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned
+--pretrained=imagenet
+--resnetPooling=None
+--trained_weights_dir=/root/autodl-tmp/code/LDL_FER_TF/weights_checkpoint/resnet50_raf/
+
+# 20%噪音标签的验证逻辑
+--cfg=config_resnet50_raf
+--trained_weights=/root/autodl-nas/paper1_noise_result/best_val_20_8455
+--test_data_path=/root/autodl-tmp/RAF-DB/data/raf_test.csv
+--test_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned
+--pretrained=imagenet
+--resnetPooling=None
+--trained_weights_dir=/root/autodl-tmp/code/LDL_FER_TF/weights_checkpoint/resnet50_raf/
+
+
+# 30%噪音标签的验证逻辑
+--cfg=config_resnet50_raf
+--trained_weights=/root/autodl-nas/paper1_noise_result/best_val_30_8341
+--test_data_path=/root/autodl-tmp/RAF-DB/data/raf_test.csv
+--test_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned
+--pretrained=imagenet
+--resnetPooling=None
+--trained_weights_dir=/root/autodl-tmp/code/LDL_FER_TF/weights_checkpoint/resnet50_raf/
+
+
+# 面部遮挡的验证逻辑（使用的是正常训练集训练的模型，进行面部遮挡的测试验证）
+# 以gas为例
+--cfg=config_resnet50_raf
+--trained_weights=/root/autodl-nas/paper1_origin_result/best_val_8755
+--test_data_path=/root/autodl-tmp/RAF-DB/data/new_raf_test_mask.csv
+--test_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned_mask
+--pretrained=imagenet
+--resnetPooling=None
+--trained_weights_dir=/root/autodl-tmp/code/LDL_FER_TF/weights_checkpoint/resnet50_raf/
+```
+
+
+
+## 噪音标签
+**生成不同比例的噪音标签，获取对应的csv文件**
 ```shell
 python datasetUtils/noise_label.py --train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv --dst_data_path=/root/autodl-tmp/RAF-DB/data/ --pre=0.1
 ```
 
 
-**AffectNet数据集的处理**
-```shell
-// train
-python datasetUtils/affectNet_label.py --image_path=/root/autodl-tmp/AffectNet/train_set/images --label_path=/root/autodl-tmp/AffectNet/train_set/annotations --save_path=/root/autodl-tmp/AffectNet/data/aff_train.csv
-// test 
-python datasetUtils/affectNet_label.py --image_path=/root/autodl-tmp/AffectNet/val_set/images --label_path=/root/autodl-tmp/AffectNet/val_set/annotations --save_path=/root/autodl-tmp/AffectNet/data/aff_test.csv
-```
+
+
+
+# 
