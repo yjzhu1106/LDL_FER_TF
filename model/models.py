@@ -197,11 +197,13 @@ class ExpNet(tf.keras.Model):
 
 
         self.pool = tf.keras.layers.GlobalAveragePooling2D(name='avg_pool')
-        self.fc = tf.keras.layers.Dense(num_classes, activation='softmax',
+        self.weighting_net = AdaptiveSimNet(feature_dim)
+
+        self.fc = tf.keras.layers.Dense(num_classes, activation='softmax', name='softmax',
                                         kernel_initializer=tf.keras.initializers.HeNormal(),
                                         kernel_regularizer=tf.keras.regularizers.L2(0.001)
                                         )
-        self.weighting_net = AdaptiveSimNet(feature_dim)
+
 
     def call(self, x, training=False):
         if self.pretrained=="msceleb":
@@ -222,12 +224,15 @@ class ExpNet(tf.keras.Model):
         # softmax层
         out = self.fc(x)
 
+        # self.output = out
+
         return x, out
 
 def create_model(config):
     model = ExpNet(num_classes=config.num_classes, pretrained=config.pretrained, resnetPooling=config.resnetPooling,backbone=config.backbone)
     model(tf.ones((32, config.input_size[0], config.input_size[1], 3)))
     model.weighting_net(tf.ones((2, config.feature_dim)), tf.ones((2, 4, config.feature_dim)))
+    print(model.summary())
     return model
 
 
@@ -237,8 +242,8 @@ if __name__=="__main__":
     # model.weighting_net(tf.ones((2, 512)), tf.ones((2, 4, 512)))
     # model.summary()
 
-    model = ExpNet(num_classes=7, pretrained="msceleb", backbone="resnet18")
-    print(model(tf.ones((32, 224, 224, 3)))[0].shape)
+    model = ExpNet(num_classes=7, pretrained=None, backbone="resnet50", resnetPooling=None)
+    print(model(tf.ones((32, 112, 112, 3)))[0].shape)
     model.weighting_net(tf.ones((2, 512)), tf.ones((2, 4, 512)))
     model.summary()
 

@@ -234,7 +234,6 @@ python train.py --cfg=config_resnet50_raf --train_data_path=/root/autodl-tmp/RAF
 python train.py --cfg=config_resnet50_raf --train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv --train_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned --pretrained=imagenet --resnetPooling=None --save_interval=2 --val_data_path=/root/autodl-tmp/RAF-DB/data/raf_test.csv --val_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned
 // 增加参数验证间隔 【正确的模型训练跑的命令】
 python train.py --cfg=config_resnet50_raf --train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv --train_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned --pretrained=imagenet --resnetPooling=None --save_interval=5 --val_interval=200 --val_data_path=/root/autodl-tmp/RAF-DB/data/raf_test.csv --val_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned | tee /root/autodl-nas/paper1_origin_result/train_log.txt
-
 ```
 
 # 验证
@@ -247,6 +246,20 @@ python eval.py --cfg=config_resnet50_raf --trained_weights=/root/autodl-tmp/code
 
 **RAF-DB数据集**
 ```shell
+# 正常训练逻辑
+python train.py 
+--cfg=config_resnet50_raf 
+--train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv 
+--train_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned 
+--pretrained=imagenet 
+--resnetPooling=None 
+--save_interval=10 
+--val_interval=200 
+--val_data_path=/root/autodl-tmp/RAF-DB/data/raf_test.csv 
+--val_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned 
+| tee /root/autodl-nas/paper1_origin_result/train_log.txt
+
+
 # 正常的验证逻辑
 --cfg=config_resnet50_raf
 --trained_weights=/root/autodl-nas/paper1_origin_result/best_val_8755
@@ -289,11 +302,34 @@ python eval.py --cfg=config_resnet50_raf --trained_weights=/root/autodl-tmp/code
 # 以gas为例
 --cfg=config_resnet50_raf
 --trained_weights=/root/autodl-nas/paper1_origin_result/best_val_8755
---test_data_path=/root/autodl-tmp/RAF-DB/data/new_raf_test_mask.csv
---test_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned_mask
+--test_data_path=/root/autodl-tmp/RAF-DB/data/raf_test_mask.csv
+--test_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned
 --pretrained=imagenet
 --resnetPooling=None
 --trained_weights_dir=/root/autodl-tmp/code/LDL_FER_TF/weights_checkpoint/resnet50_raf/
+
+# 面部遮挡数据集在FED-RO上的验证代码
+--cfg=config_resnet50_raf
+--trained_weights=/root/autodl-nas/paper1_origin_result/best_val_8755
+--test_data_path=/root/autodl-tmp/FED-RO/data/fed_test.csv
+--test_image_dir=/root/autodl-tmp/FED-RO/Image/crop
+--pretrained=imagenet
+--resnetPooling=None
+--trained_weights_dir=/root/autodl-tmp/code/LDL_FER_TF/weights_checkpoint/resnet50_raf/
+
+# FED-RO上重新训练代码
+python train.py 
+--cfg=config_resnet50_raf 
+--train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv 
+--train_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned 
+--pretrained=imagenet 
+--resnetPooling=None 
+--save_interval=5 
+--val_interval=200 
+--val_data_path=/root/autodl-tmp/FED-RO/data/fed_test.csv 
+--val_image_dir=/root/autodl-tmp/FED-RO/Image/crop 
+| tee /root/autodl-nas/FED-RO/train_log.txt
+
 ```
 
 
@@ -305,7 +341,42 @@ python datasetUtils/noise_label.py --train_data_path=/root/autodl-tmp/RAF-DB/dat
 ```
 
 
+# Grad_cam
+```shell
+// pycharm参数
+--cfg=config_resnet50_raf 
+--train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv 
+--train_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned 
+--pretrained=imagenet 
+--resnetPooling=None 
+--save_interval=10 
+--val_interval=200 
+--val_data_path=/root/autodl-tmp/RAF-DB/data/raf_test.csv 
+--val_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned 
+
+```
+
+
+# K个邻居训练参数(RAF-DB)
+```shell
+python train.py
+--num_neighbors=2
+--cfg=config_resnet50_raf 
+--train_data_path=/root/autodl-tmp/RAF-DB/data/raf_train.csv 
+--train_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned 
+--pretrained=imagenet 
+--resnetPooling=None 
+--save_interval=50 
+--val_interval=50 
+--val_data_path=/root/autodl-tmp/RAF-DB/data/raf_test.csv 
+--val_image_dir=/root/autodl-tmp/RAF-DB/Image/aligned 
+--batch_size=128
+| tee /root/autodl-nas/paper1_origin_result/train_log_kneighbor_2.txt
+
+```
 
 
 
-# 
+# 消融实验
+
+

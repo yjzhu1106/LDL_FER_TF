@@ -63,6 +63,10 @@ def parse_arg(argv=None):
                         default=32,
                         help="Resume training from the last checkpoint")
 
+    parser.add_argument("--num_neighbors", type=int,
+                        default=8,
+                        help='the number of neighbors')
+
 
 
     args = parser.parse_args(argv)
@@ -335,6 +339,10 @@ if __name__ == '__main__':
     if args.batch_size != 32:
         print('batch_size: {}'.format(args.batch_size))
         config.batch_size = args.batch_size
+
+    if args.num_neighbors != 8:
+        print('num_neighbors: {}'.format(args.num_neighbors))
+        config.num_neighbors = args.num_neighbors
 
     print(config.__dict__)
 
