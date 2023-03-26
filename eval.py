@@ -89,4 +89,4 @@ if __name__ == '__main__':
 
     print(config.__dict__)
 
-    main(test_data_path= args.test_data_path, test_image_dir=args.test_image_dir, config= config)
+    main(test_data_path=   args.test_data_path, test_image_dir=args.test_image_dir, config= config)

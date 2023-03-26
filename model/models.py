@@ -1,6 +1,6 @@
 import tensorflow as tf
 import os
-
+from tensorflow.python.profiler import profiler_v2 as profiler
 from model.resnet50 import ResNet50
 
 
@@ -232,7 +232,17 @@ def create_model(config):
     model = ExpNet(num_classes=config.num_classes, pretrained=config.pretrained, resnetPooling=config.resnetPooling,backbone=config.backbone)
     model(tf.ones((32, config.input_size[0], config.input_size[1], 3)))
     model.weighting_net(tf.ones((2, config.feature_dim)), tf.ones((2, 4, config.feature_dim)))
-    print(model.summary())
+
+    flops = tf.profiler.experimental.profile(model, inputs=[(1,112,112,3)], cmd='op', options=tf.profiler.ProfilerOptions())
+
+    # 将 FLOPs 和参数量转换为 MFLOPs 和百万个参数
+    mflops = flops.total_float_ops / 1e6
+    mparams = model.count_params() / 1e6
+
+    print("MFLOPs: %.2f" % mflops)
+    print("Million Parameters: %.2f" % mparams)
+
+    # print(model.summary())
     return model
 
 

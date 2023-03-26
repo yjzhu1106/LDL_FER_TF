@@ -23,7 +23,7 @@ def parse_arg(argv=None):
                         default="/root/autodl-tmp/AffectNet/val_set/annotations",
                         help="affectNet数据集标签和VA的路径")
     parser.add_argument("--save_path", type=str,
-                        default="/root/autodl-tmp/AffectNet/data/aff_test.csv",
+                        default="/root/autodl-tmp/AffectNet/data/testing.csv",
                         help="affectNet数据集标签和VA的路径")
     parser.add_argument("--load_label_npy", type=str,
                         default='load',
@@ -35,15 +35,40 @@ def parse_arg(argv=None):
     return args
 
 
+def get_left_upper_point_and_size(ind):
+    reshape_len = int(len(ind)/2)
+    ind_point = ind.reshape((reshape_len, 2))
+
+    x_min, y_min = np.min(ind_point, axis=0)
+
+    # 获取关键点的最大横坐标和最大纵坐标
+    x_max, y_max = np.max(ind_point, axis=0)
+
+    # 计算面部的宽和高
+    width = x_max - x_min
+    height = y_max - y_min
+
+    # 获取面部关键点的左上角位置
+    top_left = (x_min, y_min)
+
+    return x_min, y_min, width, height
+
+
+
 def getAttr(image_path, label_path):
     subDirectory_filePath = []
     expression = []
     valence = []
     arousal = []
+    facial_landmarks = []
+    face_x = []
+    face_y = []
+    face_width = []
+    face_height = []
 
     expression_backup = []
     pb_i = Progbar(287651, width=50, interval=0.01,
-                   stateful_metrics=['_exp', '_aro', '_val'])
+                   stateful_metrics=['_exp', '_aro', '_val', '_Ind'])
 
     i = 1
     for image_file_path in image_path.iterdir():
@@ -54,16 +79,19 @@ def getAttr(image_path, label_path):
         flag_exp = 0
         flag_aro = 0
         flag_val = 0
+        flag_Ind = 0
 
         image_name = image_file_path.name.split('.')[0]
 
         img_label_name = image_name + '_exp.npy'  # 表情标签的文件名
         img_aro_name = image_name + '_aro.npy'  # 表情VA值的A、
         img_val_name = image_name + '_val.npy'  # 表情VA值的V
+        img_Ind_name = image_name + '_lnd.npy'  # 表情的关键点坐标
 
         img_label_path = Path(label_path, img_label_name)
         img_aro_path = Path(label_path, img_aro_name)
         img_val_path = Path(label_path, img_val_name)
+        img_Ind_path = Path(label_path, img_Ind_name)
 
         if img_label_path.exists() and not img_label_path.is_dir():
             label = int(np.load(img_label_path).astype(int))
@@ -86,19 +114,41 @@ def getAttr(image_path, label_path):
         else:
             print(img_val_name + ' not exists!!!')
 
+        if img_Ind_path.exists() and not img_Ind_path.is_dir():
+            ind = np.load(img_Ind_path)
+            x, y, width, height = get_left_upper_point_and_size(ind)
+
+            ind_str = ''
+            for ii in ind:
+                if ind_str == '':
+                    ind_str = str(ii)
+                    continue
+                ind_str = ind_str + ';' + str(ii)
+            flag_Ind = 1
+        else:
+            ind=";"
+            print(img_Ind_name + ' not exists!!!')
+
         subDirectory_filePath = np.append(subDirectory_filePath, image_file_path.name)
         expression = np.append(expression, label)
-        valence = np.append(valence, aro)
-        arousal = np.append(arousal, val)
+        valence = np.append(valence, val)
+        arousal = np.append(arousal, aro)
+        facial_landmarks.append(ind_str)
+        face_x = np.append(face_x, x)
+        face_y = np.append(face_y, y)
+        face_width = np.append(face_width, width)
+        face_height = np.append(face_height, height)
 
         expression_backup = np.append(expression_backup, label)
         pb_i.add(1, [('_exp', flag_exp),
                      ('_aro', flag_aro),
-                     ('_val', flag_val)])
+                     ('_val', flag_val),
+                     ('_Ind', flag_Ind)])
 
     expression = expression.astype(int)
+    facial_landmarks = np.array(facial_landmarks)
 
-    return subDirectory_filePath, expression, valence, arousal
+    return subDirectory_filePath, expression, valence, arousal, facial_landmarks, face_x, face_y, face_width, face_height
 
 
 def getKnn(subDirectory_filePath, valence, arousal):
@@ -225,39 +275,77 @@ if __name__ == '__main__':
     print()
     start = time.time()
     if args.load_label_npy == 'save':
-        subDirectory_filePath, expression, valence, arousal = getAttr(image_path=image_path, label_path=label_path)
-        np.save("/root/autodl-tmp/AffectNet/data/expression.npy", expression)
-        np.save("/root/autodl-tmp/AffectNet/data/valence.npy", valence)
-        np.save("/root/autodl-tmp/AffectNet/data/arousal.npy", arousal)
-        np.save("/root/autodl-tmp/AffectNet/data/subDirectory_filePath.npy", subDirectory_filePath)
+        subDirectory_filePath, expression, valence, arousal, facial_landmarks,face_x, face_y, face_width, face_height = getAttr(image_path=image_path, label_path=label_path)
+        np.save("/root/autodl-tmp/AffectNet/data/tmp/expression.npy", expression)
+        np.save("/root/autodl-tmp/AffectNet/data/tmp/valence.npy", valence)
+        np.save("/root/autodl-tmp/AffectNet/data/tmp/arousal.npy", arousal)
+        np.save("/root/autodl-tmp/AffectNet/data/tmp/subDirectory_filePath.npy", subDirectory_filePath)
+        np.save("/root/autodl-tmp/AffectNet/data/tmp/facial_landmarks.npy", facial_landmarks)
     else:
-        expression = np.load('/root/autodl-tmp/AffectNet/data/expression.npy')
-        valence = np.load("/root/autodl-tmp/AffectNet/data/valence.npy")
-        arousal = np.load("/root/autodl-tmp/AffectNet/data/arousal.npy")
-        subDirectory_filePath = np.load("/root/autodl-tmp/AffectNet/data/subDirectory_filePath.npy")
+        expression = np.load('/root/autodl-tmp/AffectNet/data/backup/expression.npy')
+        valence = np.load("/root/autodl-tmp/AffectNet/data/backup/valence.npy")
+        arousal = np.load("/root/autodl-tmp/AffectNet/data/backup/arousal.npy")
+        subDirectory_filePath = np.load("/root/autodl-tmp/AffectNet/data/backup/subDirectory_filePath.npy")
     end = time.time()
     print()
     print('>>>>>>>end get image attribute, time:  %s Seconds>>>>>>>>>>>>' % (end - start))
 
-    df = pd.DataFrame(subDirectory_filePath)
-    # df.columns = ['subDirectory_filePath', 'expression', 'valence', 'arousal', 'knn', 'expression_backup']
-    df.columns = ['subDirectory_filePath']
-    df['expression'] = expression
-    df['valence'] = valence
-    df['arousal'] = arousal
+
 
 
     '''转换数组为GPU可以接受的数组，来用GPU计算'''
-    v_cp = cp.asarray(valence)
-    a_cp = cp.asarray(arousal)
+    # v_cp = cp.asarray(valence)
+    # a_cp = cp.asarray(arousal)
 
     # v_cp = mt.tensor(valence, gpu=True)
     # a_cp = mt.tensor(arousal, gpu=True)
     '''获取每个图片最近的20个图片'''
-    knn = getKnn(subDirectory_filePath, v_cp, a_cp)
-    df['knn']=knn
-
+    # knn = getKnn(subDirectory_filePath, v_cp, a_cp)
+    # knn = np.load("/root/autodl-tmp/AffectNet/data/backup/knn_distance.npy")
+    # knn = np.array(knn)
+    df = pd.DataFrame()
+    # df.columns = ['subDirectory_filePath', 'expression', 'valence', 'arousal', 'knn', 'expression_backup']
+    df['subDirectory_filePath'] = subDirectory_filePath
+    df['expression'] = expression
+    df['valence'] = valence
+    df['arousal'] = arousal
+    df['facial_landmarks'] = facial_landmarks
+    df['face_x'] = face_x
+    df['face_y'] = face_y
+    df['face_width'] = face_width
+    df['face_height'] = face_height
     df.to_csv(args.save_path, index=False,
-              header=['subDirectory_filePath', 'expression', 'valence', 'arousal', 'knn'])
+              header=['subDirectory_filePath', 'expression', 'valence', 'arousal', 'facial_landmarks',
+                      "face_x", "face_y", "face_width", "face_height"])
 
-    mars.stop_server()
+    # tmp_df = pd.DataFrame()
+    #
+    # # tmp_df['knn']=knn
+    # drop_column = []
+    # knn_list = tmp_df['knn'].str.split(";").to_list()
+    #
+    # tmp_knn = {0:knn[29], 1:knn[1], 2:knn[0], 3:knn[76], 4:knn[45], 5:knn[37], 6:knn[39]}
+    # for i in range(len(knn_list)):
+    #     if len(knn_list[i]) != 21:
+    #         knn[i] = tmp_knn[expression[i]]
+    #         # drop_column = np.append(drop_column, i)
+    #     else:
+    #         tmp_knn[expression[i]] = knn[i]
+    #
+    # # df_result = df.drop(labels=drop_column, axis=0)
+    # df['knn'] = knn
+    # knn_list2 = df['knn'].str.split(";").to_list()
+    # '''验证维度不一致'''
+    # knn_map = {}
+    # for k in knn_list2:
+    #     len_k = len(k)
+    #     if len_k in knn_map.keys():
+    #         knn_map[len_k] = knn_map[len_k] + 1
+    #     else:
+    #         knn_map[len_k] = 1
+    # print(knn_map)
+    #
+    # df.to_csv(args.save_path, index=False,
+    #           header=['subDirectory_filePath', 'expression', 'valence', 'arousal', 'knn'])
+
+    # mars.stop_server()

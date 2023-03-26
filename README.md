@@ -202,6 +202,16 @@ python datasetUtils/affectNet_label.py --image_path=/root/autodl-tmp/AffectNet/t
 python datasetUtils/affectNet_label.py --image_path=/root/autodl-tmp/AffectNet/val_set/images --label_path=/root/autodl-tmp/AffectNet/val_set/annotations --save_path=/root/autodl-tmp/AffectNet/data/aff_test.csv
 ```
 
+**创新2，对数据集进行处理**
+```shell
+// train
+python datasetUtils/affectNet_label.py --image_path=/root/autodl-tmp/AffectNet/train_set/images --label_path=/root/autodl-tmp/AffectNet/train_set/annotations --save_path=/root/autodl-tmp/AffectNet/data/training.csv
+// test 
+python datasetUtils/affectNet_label.py --image_path=/root/autodl-tmp/AffectNet/val_set/images --label_path=/root/autodl-tmp/AffectNet/val_set/annotations --save_path=/root/autodl-tmp/AffectNet/data/testing.csv
+```
+
+
+
 
 ### RUN the code
 
